@@ -59,7 +59,7 @@ def on_message(ws, message):
         else:
             print("sell condition 1!")
 
-  #Variación del my_apo - apo_Hace15 >= APO_delta
+  #V<ariación del my_apo - apo_Hace15 >= APO_delta
     if len(closes)-(15*60/2) > APO_slow: #Cambia la condición porque hay que tener las últimas 21 velas de 15 min, ya que no usamos la última de 15 min
         closesHace15=closes.remove("Ultimo Dato")#No se como escribir que hay que sacar la última vela
         apo_Hace15=talib.APO(closesHace15, APO_fast, APO_slow, matype)
