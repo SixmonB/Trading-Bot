@@ -64,11 +64,8 @@ websocket.enableTrace(True)
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message)
 ws.run_forever()
 
-# bbands 
-# upperband, middleband, lowerband = BBANDS(close, timeperiod=5, nbdevup=2, nbdevdn=2, matype=0)
+
 upperband, middleband, lowerband = talib.BBANDS(closes, ) 
-# EMA 15
-# real = EMA(close, timeperiod=30)
-# apo 
-# real = APO(close, fastperiod=10, slowperiod=20, matype=0)
+
+asdasd
 
