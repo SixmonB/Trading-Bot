@@ -56,6 +56,7 @@ def on_message(ws, message):
             print("comprar!")
         else:
             print("vender!")
+            
 
 def on_error(ws,error):
     print(error)
@@ -66,6 +67,4 @@ ws.run_forever()
 
 
 upperband, middleband, lowerband = talib.BBANDS(closes, ) 
-
-asdasd
 
