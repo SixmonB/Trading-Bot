@@ -24,7 +24,7 @@ closes = []
 closesHace15 = []
 # ------------- PARAMETROS -------------
  
-EMA_period = 17*(15*60/2)
+EMA_period = 18*(15*60/2)
 APO_slow = 20*(15*60/2) # 10 y 20 para velas de 15 minutos
 APO_fast = 10*(15*60/2)
 matype = 0
@@ -66,6 +66,27 @@ def on_message(ws, message):
         if(my_apo-apo_Hace15>APO_delta):
              print("buy condition 2!")
 
+
+  # Precio de vela creciente (buy condition 3)
+  # Promedio velas(-900;-600) < Promedio velas(-600;-300) < Promedio velas(-300;0)
+
+  # Precio de vela cruza con indicador EMA (buy condition 4)
+  # Opcion 1: Precio vela (-5)< EMA < Precio vela (0)
+  # Opcion 2: Precio vela (0)*0.998 < EMA < Precio vela (0)*1.002
+
+  #Condiciones de venta______________________________
+
+  # Precio de vela cruza con indicador BBands (sell condition 1 - take profit - )
+  # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
+  # Opcion 2: Precio vela (0)*0.998 < BBands < Precio vela (0)*1.002
+
+  # APO con valor negativo (sell condition 2 - programada en condicion de buy de APO -)
+  
+  # Stop loss -5% (sell condition 3)
+  # Precio de vela (0) < Precio de vela de compra * 0.95
+
+  #Evaluar la posibilidad de venta con BBands inferior (sell condition 4 - creo q no es necesaria- )
+      
 def on_error(ws,error):
     print(error)
 
