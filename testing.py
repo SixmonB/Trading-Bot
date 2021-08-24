@@ -95,7 +95,7 @@ for i in range(len(candles_historical)):
     
   # Opcion 2: Precio vela (0)*0.998 < EMA < Precio vela (0)*1.002
 
-  #Condiciones de venta______________________________
+  #Condiciones de venta______________________________ 
 
     
   # Opcion 2: Precio vela (0)*0.998 < BBands < Precio vela (0)*1.002
