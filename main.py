@@ -17,7 +17,8 @@
 
 # --------------------------------------
 
-import config, websocket, json, numpy, talib, pprint
+import config, websocket, json, talib, pprint
+import numpy as np
 from binance.client import Client
 from binance.enums import *
 
@@ -31,6 +32,7 @@ ajuste = tiempo_vela*60/2 #En el denominador indicar la duracion de la vela para
 EMA_period = 18*ajuste
 APO_slow = 20*ajuste 
 APO_fast = 10*ajuste
+correction = 300
 matype = 0
 APO_delta=-0.0025 #Posibilidad de que varíe en función del precio (podría ser por rango de precio)
             #Precio       $(0.66-1) ; $(1-1.33) ; $(1.33-1.66) ; $(1.66-2)
@@ -67,19 +69,25 @@ def on_message(ws, message):
     # is_candle_closed = candle['x']
     closes.append(candle['c'])
     
-    if len(closes) >= EMA_period:
-        my_ema = talib.EMA(closes, EMA_period)
-
+    if (len(closes) >= EMA_period+correction):
+        float_closes = [float(x) for x in closes]
+        np_float_closes = np.array(float_closes)
+        my_ema = talib.EMA(np_float_closes, EMA_period)
+        print(".")
     if len(closes) >= APO_slow + ajuste:
-        closes_actual = closes[ajuste-1:len(closes)]
-        my_apo = talib.APO(closes_actual, APO_fast, APO_slow, matype)
+        closes_actual = closes[int(ajuste-1):int(len(closes))]
+        float_closes_actual = [float(x) for x in closes_actual]
+        np_float_closes_actual = np.array(float_closes_actual)
+        my_apo = talib.APO(np_float_closes_actual, APO_fast, APO_slow, matype)
             # Condicion de venta 1: APO con valor negativo
         if(my_apo >= matype):
             print("buy condition 1!")
             # Variación del my_apo - apo_Hace15 >= APO_delta
             # Cambia la condición porque hay que tener las últimas 21 velas de 15 min, ya que no usamos la última de 15 min
-            closes_Hace15 = closes[:len(closes)-ajuste]
-            apo_Hace15=talib.APO(closes_Hace15, APO_fast, APO_slow, matype)
+            closes_hace15 = closes[:len(closes)-ajuste]
+            float_closes_hace15 = [float(x) for x in closes_hace15]
+            np_float_closes_hace15 = np.array(float_closes_hace15)
+            apo_Hace15=talib.APO(np_float_closes_hace15, APO_fast, APO_slow, matype)
             if(my_apo-apo_Hace15 > APO_delta):
                 print("buy condition 2!")
         # Precio de vela creciente (buy condition 3)
