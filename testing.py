@@ -70,14 +70,14 @@ for i in range(len(candles_historical)):
                             if(my_apo[-1]-apo_hace15[-1] > APO_delta):
                                 print("buy condition 2!")
                         # Precio de vela creciente (buy condition 3)
-                        # Promedio velas(-600;-400) < Promedio velas(-400;-200) < Promedio velas(-200;0)
-                                velas_150_100 = closes[int(-ajuste*1.5-1):int(-ajuste-1)]
-                                velas_100_50 = closes[int(-ajuste-1):int(-ajuste*0.5-1)]
-                                velas_50_0 = closes[int(-ajuste*0.5-1):-1]
-                                average_150 = Average(velas_150_100)
-                                average_100 = Average(velas_100_50)
-                                average_50 = Average(velas_50_0)
-                                if (average_150 < average_100 and average_100 < average_50):
+                        # Promedio velas(-100;-66) < Promedio velas(-66;-33) < Promedio velas(-33;0)
+                                velas_100_66 = closes[int(-ajuste*1-1):int(-ajuste*0.66-1)]
+                                velas_66_33 = closes[int(-ajuste*0.66-1):int(-ajuste*0.33-1)]
+                                velas_33_0 = closes[int(-ajuste*0.33-1):-1]
+                                average_100 = Average(velas_100_66)
+                                average_66 = Average(velas_66_33)
+                                average_33 = Average(velas_33_0)
+                                if (average_100 < average_66 and average_66 < average_33):
                                     print("buy condition 3!")
                         # Precio de vela cruza con indicador EMA (buy condition 4)
                         # Opcion 1: Precio vela (-5)< EMA < Precio vela (0)
