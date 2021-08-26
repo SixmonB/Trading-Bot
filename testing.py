@@ -23,21 +23,25 @@ bbands_period = 10*ajuste
 nbdevup = 2.15
 nbdevdn = 2.15
 compra = 0 # valor de inicializacion de la variable de compra
+money = 100
+ada = 0
 
 # --------------------------------------
 
+# cliente con informacion de cada cuenta de binance
 client = Client(config.apiKey, config.apiSecurity, tld='com')
-symbolTicker = 'ADAUSDT'
-quantityOrders = 1
+symbolTicker = 'ADAUSDT' # token a tradear
+# velas historicas de la moneda indicada obtenidas de la api
 candles_historical = client.get_historical_klines(symbolTicker, Client.KLINE_INTERVAL_1MINUTE, "15 hour ago UTC")
 
-
+# funcion auxiliar para calcular promedio
 def Average(lst):
     return sum(lst)/len(lst)
 
+closes = list() # lista de valores de cierre de velas
+# los valores de las velas son strings, por lo que luego debemos castear esta variable a float
+# para poder operar con talib
 
-
-closes = list()
 # print('received message')
 for i in range(len(candles_historical)):
     closes.append(float(candles_historical[i][4]))
@@ -45,8 +49,10 @@ for i in range(len(candles_historical)):
     if (len(closes) >= EMA_period):
         float_closes = [float(x) for x in closes]
         np_float_closes = np.array(float_closes)
+        # las funciones de talib requieren un numpy array de floats, por lo que debemos convertir las listas a 
+        # np.array
         my_ema = talib.EMA(np_float_closes, EMA_period)
-        if not (math.isnan(my_ema[-1])):
+        if not (math.isnan(my_ema[-1])): # verificamos que el valor de my_ema/my_apo sea un numero real
             #print(my_ema[-1])
             #print(".")
             if len(closes) >= APO_slow + ajuste:
@@ -70,34 +76,57 @@ for i in range(len(candles_historical)):
                             if(my_apo[-1]-apo_hace15[-1] > APO_delta):
                                 print("buy condition 2!")
                         # Precio de vela creciente (buy condition 3)
-                        # Promedio velas(-100;-66) < Promedio velas(-66;-33) < Promedio velas(-33;0)
-                                velas_100_66 = closes[int(-ajuste*1-1):int(-ajuste*0.66-1)]
-                                velas_66_33 = closes[int(-ajuste*0.66-1):int(-ajuste*0.33-1)]
-                                velas_33_0 = closes[int(-ajuste*0.33-1):-1]
-                                average_100 = Average(velas_100_66)
-                                average_66 = Average(velas_66_33)
-                                average_33 = Average(velas_33_0)
-                                if (average_100 < average_66 and average_66 < average_33):
+                        # Promedio velas(-600;-400) < Promedio velas(-400;-200) < Promedio velas(-200;0)
+                                velas_150_100 = closes[int(-ajuste*1.5-1):int(-ajuste-1)]
+                                velas_100_50 = closes[int(-ajuste-1):int(-ajuste*0.5-1)]
+                                velas_50_0 = closes[int(-ajuste*0.5-1):-1]
+                                average_150 = Average(velas_150_100)
+                                average_100 = Average(velas_100_50)
+                                average_50 = Average(velas_50_0)
+                                if (average_150 < average_100 and average_100 < average_50):
                                     print("buy condition 3!")
                         # Precio de vela cruza con indicador EMA (buy condition 4)
                         # Opcion 1: Precio vela (-5)< EMA < Precio vela (0)
                                     if (closes[-6] < my_ema[-1] and my_ema[-1] < closes[-1]):
-                                        print("buy condition 4!")
-                                        print("COMPRASTE")
-                                        compra = closes[-1]
-                        else:
+                                        if (money>0):
+                                            print("buy condition 4!")
+                                            print("COMPRASTE")
+                                            compra = closes[-1]
+                                            ada = money/closes[-1]
+                                            money = 0
+                                            print("ADA: {}", ada)
+                                            print("USDT: {}", money)
+                    else:
+                        if (ada>0):
                             print("sell condition 1!")
-                            # Precio de vela cruza con indicador BBands (sell condition 1 - take profit - )
-                            # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
-                            upperband, middleband, lowerband = talib.BBANDS(np_float_closes, bbands_period, nbdevup, nbdevdn, matype) 
-                            if not (math.isnan(upperband[-1])):    
-                                if (float_closes[-6] < upperband[-1] and upperband[-1] < float_closes[-1]):
-                                    print("sell condition 2!")
-                                # Stop loss -5% (sell condition 3)
-                                # Precio de vela (0) < Precio de vela de compra * 0.95
-                                    if (closes[-1] < compra*0.95):
-                                        print("sell condition 3!")
-                        closes.pop(0)
+                            print("VENDISTE")
+                            money = ada*closes[-1]
+                            ada = 0
+                            print("ADA: {}", ada)
+                            print("USDT: {}", money)
+                        # Precio de vela cruza con indicador BBands (sell condition 1 - take profit - )
+                        # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
+                    upperband, middleband, lowerband = talib.BBANDS(np_float_closes, bbands_period, nbdevup, nbdevdn, matype) 
+                    if not (math.isnan(upperband[-1])):    
+                        if (float_closes[-6] < upperband[-1] and upperband[-1] < float_closes[-1]):
+                            if (ada>0):
+                                print("sell condition 2!")
+                                print("VENDISTE")
+                                money = ada*closes[-1]
+                                ada = 0
+                                print("ADA: {}", ada)
+                                print("USDT: {}", money)
+                        # Stop loss -5% (sell condition 3)
+                        # Precio de vela (0) < Precio de vela de compra * 0.95
+                    if (float_closes[-1] < compra*0.95):
+                        if (ada>0):
+                            print("sell condition 3!")
+                            print("VENDISTE")
+                            money = ada*closes[-1]
+                            ada = 0
+                            print("ADA: {}", ada)
+                            print("USDT: {}", money)
+                    closes.pop(0)
 
     
   # Opcion 2: Precio vela (0)*0.998 < EMA < Precio vela (0)*1.002
