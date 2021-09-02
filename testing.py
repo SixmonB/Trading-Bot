@@ -3,6 +3,7 @@ import config, websockets, json, talib, math
 import numpy as np
 from binance.client import Client
 from binance.enums import *
+import matplotlib.pyplot as plt
 
 
 SOCKET = "wss://stream.binance.com:9443/ws/adausdt@kline_1m"    # <symbol>@kline<interval>
@@ -12,7 +13,7 @@ closesHace15 = []
 
 tiempo_vela = 15 #Duracion de la vela pensada para la estrategia en min 
 ajuste = tiempo_vela*60/60 #En el denominador indicar la duracion de la vela para operar en seg 
-EMA_period = ajuste/3
+EMA_period = ajuste
 APO_slow = 20*ajuste 
 APO_fast = 10*ajuste
 matype = 0
@@ -25,12 +26,19 @@ nbdevdn = 2.15
 compra = 0 # valor de inicializacion de la variable de compra
 money = 100
 ada = 0
-
+compras = list()
+minutes_compra = list()
+ventas1 = list()
+ventas2 = list()
+ventas3 = list()
+minutes_venta1 = list()
+minutes_venta2 = list()
+minutes_venta3 = list()
 # --------------------------------------
 
 # cliente con informacion de cada cuenta de binance
 client = Client(config.apiKey, config.apiSecurity, tld='com')
-symbolTicker = 'ADAUSDT' # token a tradear
+symbolTicker = 'MATICUSDT' # token a tradear
 # velas historicas de la moneda indicada obtenidas de la api
 candles_historical = client.get_historical_klines(symbolTicker, Client.KLINE_INTERVAL_1MINUTE, "15 hour ago UTC")
 
@@ -41,6 +49,7 @@ def Average(lst):
 closes = list() # lista de valores de cierre de velas
 # los valores de las velas son strings, por lo que luego debemos castear esta variable a float
 # para poder operar con talib
+minute = 0
 
 # print('received message')
 for i in range(len(candles_historical)):
@@ -52,6 +61,8 @@ for i in range(len(candles_historical)):
         # las funciones de talib requieren un numpy array de floats, por lo que debemos convertir las listas a 
         # np.array
         my_ema = talib.EMA(np_float_closes, EMA_period)
+        #print(my_ema)
+        #print("closes: {}", len(np_float_closes))
         if not (math.isnan(my_ema[-1])): # verificamos que el valor de my_ema/my_apo sea un numero real
             #print(my_ema[-1])
             #print(".")
@@ -63,9 +74,9 @@ for i in range(len(candles_historical)):
                 if not (math.isnan(my_apo[-1])):
                     #print(my_apo[-1])
                     #print(".....")
-                    # Condicion de venta 1: APO con valor negativo
+                    # Condicion de compra 1: APO con valor positivo
                     if(my_apo[-1] >= matype):
-                        print("buy condition 1!")
+                        # print("buy condition 1!")
                         # Variación del my_apo - apo_Hace15 >= APO_delta
                         # Cambia la condición porque hay que tener las últimas 21 velas de 15 min, ya que no usamos la última de 15 min
                         closes_hace15 = closes[:int(len(closes)-ajuste)]
@@ -74,7 +85,7 @@ for i in range(len(candles_historical)):
                         apo_hace15 = talib.APO(np_float_closes_hace15, APO_fast, APO_slow, matype)
                         if not (math.isnan(apo_hace15[-1])):
                             if(my_apo[-1]-apo_hace15[-1] > APO_delta):
-                                print("buy condition 2!")
+                                # print("buy condition 2!")
                         # Precio de vela creciente (buy condition 3)
                         # Promedio velas(-600;-400) < Promedio velas(-400;-200) < Promedio velas(-200;0)
                                 velas_150_100 = closes[int(-ajuste*1.5-1):int(-ajuste-1)]
@@ -84,14 +95,16 @@ for i in range(len(candles_historical)):
                                 average_100 = Average(velas_100_50)
                                 average_50 = Average(velas_50_0)
                                 if (average_150 < average_100 and average_100 < average_50):
-                                    print("buy condition 3!")
+                                    # print("buy condition 3!")
                         # Precio de vela cruza con indicador EMA (buy condition 4)
                         # Opcion 1: Precio vela (-5)< EMA < Precio vela (0)
-                                    if (closes[-6] < my_ema[-1] and my_ema[-1] < closes[-1]):
+                                    if (closes[-2] < my_ema[-1] and my_ema[-1] < closes[-1]):
                                         if (money>0):
-                                            print("buy condition 4!")
+                                            # print("buy condition 4!")
                                             print("COMPRASTE")
                                             compra = closes[-1]
+                                            compras.append(compra)
+                                            minutes_compra.append(minute)
                                             ada = money/closes[-1]
                                             money = 0
                                             print("ADA: {}", ada)
@@ -100,6 +113,9 @@ for i in range(len(candles_historical)):
                         if (ada>0):
                             print("sell condition 1!")
                             print("VENDISTE")
+                            venta = closes[-1]
+                            ventas1.append(venta)
+                            minutes_venta1.append(minute)
                             money = ada*closes[-1]
                             ada = 0
                             print("ADA: {}", ada)
@@ -108,10 +124,13 @@ for i in range(len(candles_historical)):
                         # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
                     upperband, middleband, lowerband = talib.BBANDS(np_float_closes, bbands_period, nbdevup, nbdevdn, matype) 
                     if not (math.isnan(upperband[-1])):    
-                        if (float_closes[-6] < upperband[-1] and upperband[-1] < float_closes[-1]):
+                        if (float_closes[-2] < upperband[-1] and upperband[-1] < float_closes[-1]):
                             if (ada>0):
                                 print("sell condition 2!")
                                 print("VENDISTE")
+                                venta = closes[-1]
+                                ventas2.append(venta)
+                                minutes_venta2.append(minute)
                                 money = ada*closes[-1]
                                 ada = 0
                                 print("ADA: {}", ada)
@@ -122,13 +141,28 @@ for i in range(len(candles_historical)):
                         if (ada>0):
                             print("sell condition 3!")
                             print("VENDISTE")
+                            venta = closes[-1]
+                            ventas3.append(venta)
+                            minutes_venta3.append(minute)
                             money = ada*closes[-1]
                             ada = 0
                             print("ADA: {}", ada)
                             print("USDT: {}", money)
-                    closes.pop(0)
-
-    
+        #closes.pop(0)
+    minute = minute+1
+plt.figure(1)
+plt.plot(my_ema, label='EMA')
+plt.plot(upperband, label='upperband')
+plt.plot(lowerband, label='lowerband')
+plt.plot(closes, label='Price', color='black')
+plt.plot(minutes_compra, compras, 'o', color = 'green')
+plt.plot(minutes_venta1, ventas1, 'x', color='red') # sell condition 1: apo negativo
+plt.plot(minutes_venta2, ventas2, '^', color='red') # sell condition 2: toca upperband
+plt.plot(minutes_venta3, ventas3, '*', color='red') # sell condition 3: stop loss
+plt.legend(loc='best')
+plt.figure(2)
+plt.plot(my_apo, label='APO')
+plt.show()
   # Opcion 2: Precio vela (0)*0.998 < EMA < Precio vela (0)*1.002
 
   #Condiciones de venta______________________________ 
