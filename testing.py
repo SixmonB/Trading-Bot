@@ -20,7 +20,7 @@ matype = 0
 APO_delta=-0.0025 #Posibilidad de que varíe en función del precio (podría ser por rango de precio)
             #Precio       $(0.66-1) ; $(1-1.33) ; $(1.33-1.66) ; $(1.66-2)
             #APO_delta    -0.0012     -0.0014      -0.0025 
-bbands_period = 10*ajuste
+bbands_period = 7*ajuste
 nbdevup = 2.15
 nbdevdn = 2.15
 compra = 0 # valor de inicializacion de la variable de compra
@@ -98,7 +98,7 @@ for i in range(len(candles_historical)):
                                     # print("buy condition 3!")
                         # Precio de vela cruza con indicador EMA (buy condition 4)
                         # Opcion 1: Precio vela (-5)< EMA < Precio vela (0)
-                                    if (closes[-2] < my_ema[-1] and my_ema[-1] < closes[-1]):
+                                    if (closes[-6] < my_ema[-1] and my_ema[-1] < closes[-1]):
                                         if (money>0):
                                             # print("buy condition 4!")
                                             print("COMPRASTE")
@@ -124,7 +124,7 @@ for i in range(len(candles_historical)):
                         # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
                     upperband, middleband, lowerband = talib.BBANDS(np_float_closes, bbands_period, nbdevup, nbdevdn, matype) 
                     if not (math.isnan(upperband[-1])):    
-                        if (float_closes[-2] < upperband[-1] and upperband[-1] < float_closes[-1]):
+                        if (float_closes[-6] < upperband[-1] and upperband[-1] < float_closes[-1]):
                             if (ada>0):
                                 print("sell condition 2!")
                                 print("VENDISTE")
