@@ -15,9 +15,9 @@ trades = 0
 
 tiempo_vela = 15 # Duracion de la vela pensada para la estrategia en min 
 ajuste = tiempo_vela*60/60 # En el denominador indicar la duracion de la vela para operar en seg 
-EMA_period = 9*ajuste
-APO_slow = 20*ajuste
-APO_fast = 10*ajuste
+EMA_period = 8*ajuste
+APO_slow = 24*ajuste
+APO_fast = 12*ajuste
 matype = 0
 APO_delta=0.35
 # 0.009
@@ -64,7 +64,7 @@ minute = 0
 
 
 # print('received message')
-with open ('historical.csv') as csv_file:
+with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
@@ -114,9 +114,9 @@ with open ('historical.csv') as csv_file:
                                 minutes_compra.append(minute)
                                 ada = money_actual*(1-0.001)/closes[-1]
                                 money_actual = 0
-                                print("Compraste en el minuto: {}", minute)
-                                print("ADA: ", ada)
-                                print("USDT: ", money_actual)
+                                print("Compraste en el minuto:", minute)
+                                print("ADA:", ada)
+                                print("USDT:", money_actual, "\n")
                         # if (variation < APO_delta*0.6):
                         #     if (closes[-2]>lowerband[-1] and closes[-1]<lowerband[-1]):
                         #         if (money_actual>0):
@@ -142,12 +142,13 @@ with open ('historical.csv') as csv_file:
                             trades_wins += 1
                         else:
                             trades_loss += 1
-                        
+                        print("VARIACION:", (money_actual-money_anterior)*100/money_anterior)
+                        print("Vendiste en el minuto:", minute)
                         money_anterior = money_actual
                         ada = 0
                         trades += 1
-                        print("ADA: ", ada)
-                        print("USDT: ", money_actual)
+                        print("ADA:", ada)
+                        print("USDT:", money_actual, "\n")
                     # Precio de vela cruza con indicador BBands (sell condition 1 - take profit - )
                     # Opcion 1: Precio vela (-5)< BBands < Precio vela (0)
                 #if not (math.isnan(upperband[-1])):    
@@ -163,17 +164,21 @@ with open ('historical.csv') as csv_file:
                             trades_wins += 1
                         else:
                             trades_loss += 1
-                        
+                        print("VARIACION:", (money_actual-money_anterior)*100/money_anterior)
+                        print("Vendiste en el minuto:", minute)
                         money_anterior = money_actual
                         ada = 0
                         trades += 1
-                        print("ADA: ", ada)
-                        print("USDT: ", money_actual)
+                        print("ADA:", ada)
+                        print("USDT:", money_actual, "\n")
                     # Stop loss -5% (sell condition 3)
                     # Precio de vela (0) < Precio de vela de compra * 0.95
                 if (closes[-1] < compra*0.985):
                     if (ada>0):
                         print("sell condition 3!")
+                        print("-------------------")
+                        print("STOP LOSS")
+                        print("-------------------")
                         print("VENDISTE")
                         venta = closes[-1]
                         ventas3.append(venta)
@@ -183,18 +188,19 @@ with open ('historical.csv') as csv_file:
                             trades_wins += 1
                         else:
                             trades_loss += 1
-                        
+                        print("VARIACION:", (money_actual-money_anterior)*100/money_anterior)
+                        print("Vendiste en el minuto:", minute)
                         money_anterior = money_actual
                         ada = 0
                         trades += 1
-                        print("ADA: ", ada)
-                        print("USDT: ", money_actual)
+                        print("ADA:", ada)
+                        print("USDT:", money_actual, "\n")
                 closes.pop(0)
         minute = minute+1
 
-print("TRADES: ", trades)
-print("WINS: ", trades_wins)
-print("LOSS: ", trades_loss)
+print("TRADES:", trades)
+print("WINS:", trades_wins)
+print("LOSS:", trades_loss)
 
 plt.figure(1)
 plt.plot(my_ema_to_print, label='EMA')
@@ -205,7 +211,7 @@ plt.plot(closes_to_print, label='Price', color='black')
 plt.plot(minutes_compra, compras, 'o', color = 'green')
 plt.plot(minutes_venta1, ventas1, 'x', color='red') # sell condition 1: apo negativo
 plt.plot(minutes_venta2, ventas2, '^', color='red') # sell condition 2: toca upperband
-plt.plot(minutes_venta3, ventas3, '*', color='red') # sell condition 3: stop loss
+plt.plot(minutes_venta3, ventas3, 'o', color='red') # sell condition 3: stop loss
 plt.xlim([0, 30240])
 plt.legend(loc='best')
 plt.figure(2)
