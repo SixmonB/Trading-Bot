@@ -4,7 +4,7 @@ import numpy as np
 from binance.client import Client
 from binance.enums import *
 import matplotlib.pyplot as plt
-
+import csv
 
 SOCKET = "wss://stream.binance.com:9443/ws/maticusdt@kline_1m"    # <symbol>@kline<interval>
 closes = []
@@ -105,7 +105,7 @@ for i in range(len(candles_historical)):
                             compra = closes[-1]
                             compras.append(compra)
                             minutes_compra.append(minute)
-                            ada = money/closes[-1]
+                            ada = money*(1-0.0001)/closes[-1]
                             money = 0
                             print("Compraste en el minuto: {}", minute)
                             print("ADA: {}", ada)
@@ -118,7 +118,7 @@ for i in range(len(candles_historical)):
                                 compra = closes[-1]
                                 compras.append(compra)
                                 minutes_compra.append(minute)
-                                ada = money/closes[-1]
+                                ada = money*(1-0.0001)/closes[-1]
                                 money = 0
                                 print("Compraste en el minuto: {}", minute)
                                 print("ADA: {}", ada)
@@ -131,7 +131,7 @@ for i in range(len(candles_historical)):
                     venta = closes[-1]
                     ventas1.append(venta)
                     minutes_venta1.append(minute)
-                    money = ada*closes[-1]
+                    money = ada*closes[-1]*(1-0.0001)
                     ada = 0
                     print("ADA: {}", ada)
                     print("USDT: {}", money)
