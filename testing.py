@@ -15,9 +15,9 @@ trades = 0
 
 tiempo_vela = 15 # Duracion de la vela pensada para la estrategia en min 
 ajuste = tiempo_vela*60/60 # En el denominador indicar la duracion de la vela para operar en seg 
-EMA_period = 8*ajuste
-APO_slow = 24*ajuste
-APO_fast = 12*ajuste
+EMA_period = 9*ajuste
+APO_slow = 20*ajuste
+APO_fast = 10*ajuste
 matype = 0
 APO_delta=0.35
 # 0.009
@@ -25,7 +25,10 @@ APO_delta=0.35
 # 0.006
 # 3 velas
 # (0.009-0.006)/0.009
+comision = 0
+stop_loss = 0.98
 bbands_period = 10*ajuste
+
 nbdevup = 2.15
 nbdevdn = 2.15
 compra = 0 # valor de inicializacion de la variable de compra
@@ -44,6 +47,9 @@ minutes_venta2 = list()
 minutes_venta3 = list()
 closes = list() # lista de valores de cierre de velas
 highs = list()
+sell_condition_1 = 0
+sell_condition_2 = 0
+sell_condition_3 = 0
 # --------------------------------------
 
 # cliente con informacion de cada cuenta de binance
@@ -64,7 +70,7 @@ minute = 0
 
 
 # print('received message')
-with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
+with open ('historical.csv') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
@@ -112,7 +118,7 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
                                 compra = closes[-1]
                                 compras.append(compra)
                                 minutes_compra.append(minute)
-                                ada = money_actual*(1-0.001)/closes[-1]
+                                ada = money_actual*(1-comision)/closes[-1]
                                 money_actual = 0
                                 print("Compraste en el minuto:", minute)
                                 print("ADA:", ada)
@@ -133,11 +139,12 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
                 else:
                     if (ada>0):
                         print("sell condition 1!")
+                        sell_condition_1 += 1
                         print("VENDISTE")
                         venta = closes[-1]
                         ventas1.append(venta)
                         minutes_venta1.append(minute)
-                        money_actual = ada*closes[-1]*(1-0.001)
+                        money_actual = ada*closes[-1]*(1-comision)
                         if (money_actual > money_anterior):
                             trades_wins += 1
                         else:
@@ -155,11 +162,12 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
                 if (closes[-2] < upperband[-1] and upperband[-1] < closes[-1]):
                     if (ada>0):
                         print("sell condition 2!")
+                        sell_condition_2 += 1
                         print("VENDISTE")
                         venta = closes[-1]
                         ventas2.append(venta)
                         minutes_venta2.append(minute)
-                        money_actual = ada*closes[-1]*(1-0.001)
+                        money_actual = ada*closes[-1]*(1-comision)
                         if (money_actual > money_anterior):
                             trades_wins += 1
                         else:
@@ -173,9 +181,10 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
                         print("USDT:", money_actual, "\n")
                     # Stop loss -5% (sell condition 3)
                     # Precio de vela (0) < Precio de vela de compra * 0.95
-                if (closes[-1] < compra*0.985):
+                if (closes[-1] < compra*stop_loss):
                     if (ada>0):
                         print("sell condition 3!")
+                        sell_condition_3 += 1
                         print("-------------------")
                         print("STOP LOSS")
                         print("-------------------")
@@ -183,7 +192,7 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
                         venta = closes[-1]
                         ventas3.append(venta)
                         minutes_venta3.append(minute)
-                        money_actual = ada*closes[-1]*(1-0.001)
+                        money_actual = ada*closes[-1]*(1-comision)
                         if (money_actual > money_anterior):
                             trades_wins += 1
                         else:
@@ -201,6 +210,9 @@ with open ('MATICUSDT-1m-2021-08-15.csv') as csv_file:
 print("TRADES:", trades)
 print("WINS:", trades_wins)
 print("LOSS:", trades_loss)
+print("SELL CONDITION 1:", sell_condition_1)
+print("SELL CONDITION 2:", sell_condition_2)
+print("SELL CONDITION 3:", sell_condition_3)
 
 plt.figure(1)
 plt.plot(my_ema_to_print, label='EMA')
@@ -212,24 +224,11 @@ plt.plot(minutes_compra, compras, 'o', color = 'green')
 plt.plot(minutes_venta1, ventas1, 'x', color='red') # sell condition 1: apo negativo
 plt.plot(minutes_venta2, ventas2, '^', color='red') # sell condition 2: toca upperband
 plt.plot(minutes_venta3, ventas3, 'o', color='red') # sell condition 3: stop loss
-plt.xlim([0, 30240])
+plt.xlim([0, len(np_closes_to_print)])
 plt.legend(loc='best')
 plt.figure(2)
 plt.plot(my_apo_to_print, label='APO')
 plt.axhline(y=0, color='red')
-plt.xlim([0, 30240])
+plt.xlim([0, len(np_closes_to_print)])
 plt.show()
 
-
-  # Opcion 2: Precio vela (0)*0.998 < EMA < Precio vela (0)*1.002
-
-  #Condiciones de venta______________________________ 
-
-    
-  # Opcion 2: Precio vela (0)*0.998 < BBands < Precio vela (0)*1.002
-
-  #Evaluar la posibilidad de venta con BBands inferior (sell condition 4 - creo q no es necesaria- )
-
-#websocket.enableTrace(True)
-#ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message)
-#ws.run_forever()
